@@ -1,0 +1,38 @@
+  SELECT store_location,
+         product_category,
+         product_detail,
+  MIN(transaction_time) AS shop_opening_time,
+  MAX(transaction_time) AS shop_closing_time,
+  COUNT(DISTINCT product_id) AS sales_generated,
+  SUM(transaction_qty) AS sales_volume,
+  SUM(transaction_qty * unit_price) AS total_sales_revenue,
+  TO_DATE(transaction_date) AS sale_date,
+  EXTRACT(HOUR FROM transaction_time) AS hourly_segment,
+  SUM(transaction_qty * unit_price) AS hourly_revenue,
+  DAYNAME(TO_DATE(transaction_date)) AS day_of_the_week,
+  TO_CHAR(TO_DATE(transaction_date), 'YYYYMM') AS calendar_month,
+  TO_CHAR(TO_DATE(transaction_date), 'YY') AS yearly_sales,
+  SUM(transaction_qty * unit_price) AS category_revenue,
+  CASE
+    WHEN transaction_time BETWEEN TIME '07:00:00' AND TIME '11:59:59' THEN 'morning'
+    WHEN transaction_time BETWEEN TIME '12:00:00' AND TIME '15:59:59' THEN 'afternoon'
+    WHEN transaction_time BETWEEN TIME '16:00:00' AND TIME '19:59:59' THEN 'evening'
+    ELSE 'night'
+  END AS time_band,
+  CASE
+    WHEN SUM(transaction_qty * unit_price) BETWEEN 0 AND 2 THEN 'low_spender'
+    WHEN SUM(transaction_qty * unit_price) BETWEEN 3 AND 5 THEN 'medium_spender'
+    ELSE 'high'
+  END AS customer_segment
+FROM "AEON_DATABASE"."SALES"."SALES_TABLE",
+GROUP BY
+  store_location,
+  product_detail,
+  product_category,
+  time_band,
+  TO_DATE(transaction_date),
+  EXTRACT(HOUR FROM transaction_time),
+  DAYNAME(TO_DATE(transaction_date)),
+  TO_CHAR(TO_DATE(transaction_date), 'YYYYMM'),
+  TO_CHAR(TO_DATE(transaction_date), 'YY')
+  HAVING SUM(transaction_qty * unit_price) > 0;
